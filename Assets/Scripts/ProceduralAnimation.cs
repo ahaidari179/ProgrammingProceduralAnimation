@@ -39,7 +39,8 @@ public class ProceduralAnimation : MonoBehaviour
 
     private void Start()
     {
-      
+      leftArmConstraint.weight = 0f;
+        rightArmConstraint.weight = 0f;
     }
     void Update()
     {
@@ -60,7 +61,7 @@ public class ProceduralAnimation : MonoBehaviour
 
         PropHandsWhenGrabbing(leftArmTarget, posPropHands, rotationPropHands);
         PropHandsWhenGrabbing(rightArmTarget, posPropHands, rotationPropHands);
-        if(isClimbing ==false)
+        if(isClimbing ==true)
         {
             AnimateLimb(leftArmTarget, phase, new Vector3(-0.15f, 0, 0), 2, 2, transform.right);
                 AnimateLimb(rightArmTarget, phase, new Vector3(0.15f,0,0), 2, 2, transform.right);
@@ -91,7 +92,7 @@ public class ProceduralAnimation : MonoBehaviour
 
     void PropHandsWhenGrabbing(Transform arm, Vector3 positionProp, Vector3 rotationProp)
     {
-        if (isClimbing == false)
+        if (isClimbing == true)
         {
             
             Vector3 startingRotation = rotationProp;
