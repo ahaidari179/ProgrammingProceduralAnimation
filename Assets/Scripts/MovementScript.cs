@@ -59,7 +59,6 @@ public class MovementScript : MonoBehaviour
     public MovementType currentMovement;
     [Header("Camera For Tight Rope")]
 
-    public PlayerCamera playerCamera;
     [Header("Animation Settings")]
 
     public Animator playerAnimator;
@@ -78,6 +77,7 @@ public class MovementScript : MonoBehaviour
     public bool lockedOn;
     float timeToReGrab = 1;
     public bool ledgeJumpActive;
+    public Transform head;
 
     void Start()
     {
@@ -96,7 +96,7 @@ public class MovementScript : MonoBehaviour
     {
         Debug.Log(timeToReGrab);
         PlayerInputs();
-        CameraFacing();
+
         checkForPole();
         CheckForGround();
         CharacterAnimating();
@@ -123,47 +123,36 @@ public class MovementScript : MonoBehaviour
         HandleMovement();
 
     }
-    private void PlayerMovement(Vector3 playerDir)
+    private void PlayerMovement()
     {
 
 
-        velocity.x = CalculatePlayerMovement(playerDir.x, velocity.x);
-        velocity.z = CalculatePlayerMovement(playerDir.z, velocity.z);
-       
+        Vector3 cameraForward = camera.transform.forward * playerInput.z;
+        Vector3 cameraRight = camera.transform.right * playerInput.x;
+        //avoids instances where the player goes up when facing their camera up
+        cameraForward.y = 0;
+        cameraRight.y = 0;
+        playerDirection = (cameraForward + cameraRight).normalized;
 
+
+
+        velocity.x = playerDirection.x * maxSpeed;
+        velocity.z = playerDirection.z * maxSpeed;
         rigidbody.linearVelocity = new Vector3(velocity.x, velocity.y, velocity.z);
+
     }
-
-    private float CalculatePlayerMovement(float input, float velocity)
-    {
-        if (lockedOn == false)
-        {
-            if (input != 0)
-            {
-
-                velocity += acceleration * input * Time.fixedDeltaTime;
-                velocity = Mathf.Clamp(velocity, -maxSpeed, maxSpeed);
-
-
-            }
-            else
-            {
-                velocity = Mathf.MoveTowards(velocity, 0, deceleration * Time.deltaTime);
-
-            }
-        }
-        return velocity;
-    }
-
     public void HandleMovement()
     {
 
         switch (currentMovement)
         {
             case MovementType.running:
-                PlayerMovement(playerDirection);
+                PlayerMovement();
                 completelyTilted = false;
                 JumpUpdate();
+                break;
+            case MovementType.climbing:
+                ClimbingMovement();
                 break;
                     }
     }
@@ -229,18 +218,7 @@ public class MovementScript : MonoBehaviour
 
 
 
-    public void CameraFacing()
-    {
-        //camera directions change with input depending on where the players camera is facing
-        //the cameras forward position is multiplied with the Z axis of the player input. forward and backwards movement
-        Vector3 cameraForward = camera.transform.forward * playerInput.z;
-        Vector3 cameraRight = camera.transform.right * playerInput.x;
-        //avoids instances where the player goes up when facing their camera up
-        cameraForward.y = 0;
-        cameraRight.y = 0;
-        playerDirection = (cameraForward + cameraRight).normalized;
 
-    }
     private void CheckForGround()
     {
         //checks the ground to see whether the player is grounded or not!
@@ -289,8 +267,8 @@ public class MovementScript : MonoBehaviour
     }
     private void CheckLedge()
     {
-        Debug.DrawRay(rigidbody.position, rigidbody.transform.forward, Color.yellow);
-        if (isGrabbing = Physics.Raycast(transform.position, rigidbody.transform.forward, out ledgeHit, grabDistance, ledgeCheck.value))
+        Debug.DrawRay(head.position + Vector3.up, head.transform.forward, Color.yellow);
+        if (isGrabbing = Physics.Raycast(head.position + Vector3.up, rigidbody.transform.forward, out ledgeHit, grabDistance, ledgeCheck.value))
         {
             lockedOn = true;
             currentLedge = ledgeHit.transform.forward;
@@ -435,9 +413,9 @@ public class MovementScript : MonoBehaviour
           }*/
 
         //combining both tilting rotation with the camera player direction rotation 
-        Quaternion tilt = Quaternion.AngleAxis(playerTiltAngle, Vector3.forward);
+      /*  Quaternion tilt = Quaternion.AngleAxis(playerTiltAngle, Vector3.forward);
         Quaternion finalRotation = tilt * playerCamera.directionToRotate;
-        rigidbody.MoveRotation(Quaternion.Slerp(rigidbody.rotation, finalRotation, playerCamera.rotationSpeed * Time.deltaTime));
+        rigidbody.MoveRotation(Quaternion.Slerp(rigidbody.rotation, finalRotation, playerCamera.rotationSpeed * Time.deltaTime));*/
 
 
         rigidbody.linearVelocity = new Vector3(walkAxis.x, 0, walkAxis.z) * tightRopeSpeed * Time.deltaTime;

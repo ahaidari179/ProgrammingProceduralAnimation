@@ -5,6 +5,7 @@ public class ProceduralAnimation : MonoBehaviour
 {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
 
+    public Animator playerAnimator;
 
     [Header("IK Targets")]
     //Transforms of each limb/Rig 
@@ -20,12 +21,12 @@ public class ProceduralAnimation : MonoBehaviour
     public float legStepLength; //Leg length
     public float legStepHeight; //Leg Height
     public float walkSpeed = 5f;//walking speed
-    public Transform camera;
     //raycast to detect elevated or different levels of terrain
     [SerializeField] private float rayCastLength = 2;
     [SerializeField] private LayerMask groundCheck;
 
 
+    
     float horizontalInput;
     float verticalInput;
     private void Start()
@@ -38,11 +39,14 @@ public class ProceduralAnimation : MonoBehaviour
         float phase = Mathf.Repeat(Time.time * walkSpeed, 1f);
 
         //Feet and Toes are begin animating 
-        AnimateFoot(rFootTarget, phase, new Vector3(0.10f, 0, 0), legStepLength, legStepHeight);
-        AnimateFoot(lFootTarget, -phase, new Vector3 (-0.10f,0,0), legStepLength, legStepHeight);
+        if (playerAnimator.GetBool("IsMoving") == true)
+        {
+            AnimateFoot(rFootTarget, phase, new Vector3(0.10f, 0, 0), legStepLength, legStepHeight);
+            AnimateFoot(lFootTarget, -phase, new Vector3(-0.10f, 0, 0), legStepLength, legStepHeight);
 
-        AnimateFoot(rightTipTarget, phase, new Vector3(0.10f, 0, 0), FstepLength, FstepHeight);
-        AnimateFoot(leftTipTarget, -phase, new Vector3(-0.10f, 0, 0), FstepLength, FstepHeight);
+            AnimateFoot(rightTipTarget, phase, new Vector3(0.10f, 0, 0), FstepLength, FstepHeight);
+            AnimateFoot(leftTipTarget, -phase, new Vector3(-0.10f, 0, 0), FstepLength, FstepHeight);
+        }
 
     }
 
@@ -64,6 +68,7 @@ public class ProceduralAnimation : MonoBehaviour
         Vector3 terrainPosition = CollideWithTerrain(limb.position);
         limb.position = terrainPosition;
 
+       
     }
 
     Vector3 CollideWithTerrain( Vector3 legPosition)
