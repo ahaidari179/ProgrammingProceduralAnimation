@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Animations.Rigging;
 using static UnityEditor.Searcher.SearcherWindow.Alignment;
 
 public class ProceduralAnimation : MonoBehaviour
@@ -15,6 +16,16 @@ public class ProceduralAnimation : MonoBehaviour
     public Transform rightTipTarget;    //Right Toe
     public Transform headTarget;
 
+
+    public bool isClimbing=false;
+    public TwoBoneIKConstraint leftArmConstraint;
+    public TwoBoneIKConstraint rightArmConstraint;
+
+    public Transform leftArmTarget;
+    public Transform rightArmTarget;
+
+    public Vector3 posPropHands = new Vector3(3f, 10f, 2f);
+    public Vector3 rotationPropHands = new Vector3(90, 50f, 50);
     [Header("Step Settings")]
     public float FstepLength = 0.3f; //Toe length
     public float FstepHeight = 0.15f;//Toe Height
@@ -26,9 +37,6 @@ public class ProceduralAnimation : MonoBehaviour
     [SerializeField] private LayerMask groundCheck;
 
 
-    
-    float horizontalInput;
-    float verticalInput;
     private void Start()
     {
       
@@ -41,19 +49,29 @@ public class ProceduralAnimation : MonoBehaviour
         //Feet and Toes are begin animating 
         if (playerAnimator.GetBool("IsMoving") == true)
         {
-            AnimateFoot(rFootTarget, phase, new Vector3(0.10f, 0, 0), legStepLength, legStepHeight);
-            AnimateFoot(lFootTarget, -phase, new Vector3(-0.10f, 0, 0), legStepLength, legStepHeight);
+            AnimateLimb(rFootTarget, phase, new Vector3(0.10f, 0, 0), legStepLength, legStepHeight, transform.forward);
+            AnimateLimb(lFootTarget, -phase, new Vector3(-0.10f, 0, 0), legStepLength, legStepHeight, transform.forward);
 
-            AnimateFoot(rightTipTarget, phase, new Vector3(0.10f, 0, 0), FstepLength, FstepHeight);
-            AnimateFoot(leftTipTarget, -phase, new Vector3(-0.10f, 0, 0), FstepLength, FstepHeight);
+            AnimateLimb(rightTipTarget, phase, new Vector3(0.10f, 0, 0), FstepLength, FstepHeight, transform.forward);
+            AnimateLimb(leftTipTarget, -phase, new Vector3(-0.10f, 0, 0), FstepLength, FstepHeight, transform.forward);
         }
 
+
+
+        PropHandsWhenGrabbing(leftArmTarget, posPropHands, rotationPropHands);
+        PropHandsWhenGrabbing(rightArmTarget, posPropHands, rotationPropHands);
+        if(isClimbing ==false)
+        {
+            AnimateLimb(leftArmTarget, phase, new Vector3(-0.15f, 0, 0), 2, 2, transform.right);
+                AnimateLimb(rightArmTarget, phase, new Vector3(0.15f,0,0), 2, 2, transform.right);
+
+        }
     }
 
     //takes in the limb and the repeating phase along with a predetermined foot placement to avoid the feet being too close
     //Length and height as well
 
-    void AnimateFoot(Transform limb, float phase, Vector3 footPlacement, float length, float heightStep)
+    void AnimateLimb(Transform limb, float phase, Vector3 limbPlacement, float length, float heightStep, Vector3 direction)
 
     {
         //Using Mathf.sin to multiply phase with mathf.pi since pi is 180 degrees in RADIANS!
@@ -63,27 +81,52 @@ public class ProceduralAnimation : MonoBehaviour
         // applying it to the basePosition and added to each of the limbs along with the characters transform forward etc.
         //basically gives the feet a place to track or move forward to 
         Vector3 basePos = transform.position;
-        limb.position = basePos + transform.forward * forward + Vector3.up * height + footPlacement ;
+        limb.position = basePos + direction * forward + Vector3.up * height + limbPlacement ;
   
-        Vector3 terrainPosition = CollideWithTerrain(limb.position);
+        Vector3 terrainPosition = CollideWithTerrain(limb.position, groundCheck);
         limb.position = terrainPosition;
 
        
     }
 
-    Vector3 CollideWithTerrain( Vector3 legPosition)
+    void PropHandsWhenGrabbing(Transform arm, Vector3 positionProp, Vector3 rotationProp)
     {
-        Ray ray = new Ray(legPosition + rayCastLength * Vector3.up, Vector3.down);
-        if (Physics.Raycast(ray, out RaycastHit hit, 2f * rayCastLength, groundCheck))
+        if (isClimbing == false)
         {
-            return hit.point; // returns the collision point
+            
+            Vector3 startingRotation = rotationProp;
+            Vector3 startingPosition = positionProp;
+
+            arm.localPosition = Vector3.Lerp(
+                arm.localPosition,
+                startingPosition,
+                Time.deltaTime * 5f
+            );
+
+            arm.localRotation = Quaternion.Lerp(
+                arm.localRotation,
+                Quaternion.Euler(startingRotation),
+                Time.deltaTime * 5f
+            );
+
+
+        }
+    }
+    
+
+        Vector3 CollideWithTerrain(Vector3 legPosition, LayerMask layer)
+        {
+            Ray ray = new Ray(legPosition + rayCastLength * Vector3.up, Vector3.down);
+            if (Physics.Raycast(ray, out RaycastHit hit, 2f * rayCastLength, layer))
+            {
+                return hit.point; // returns the collision point
+            }
+
+            // if there is no collision with the ground go back to the original leg position
+            return legPosition;
         }
 
-        // if there is no collision with the ground go back to the original leg position
-        return legPosition;
     }
-  
-        
-}
+
     
 
